@@ -14,37 +14,48 @@ from executor.executor import Executor
 def main():
     print("[INFO] Iniciando sistema DSL...\n")
 
-    # Permitir pasar archivo por argumento
     file = "script.dsl"
     if len(sys.argv) > 1:
         file = sys.argv[1]
 
-    # Validar que el archivo existe
     if not os.path.exists(file):
         print(f"[ERROR] No existe el archivo: {file}")
         return
 
-    # Cargar archivo DSL
     input_stream = FileStream(file)
-
-    # Lexer y parser
     lexer = DevOpsDSLLexer(input_stream)
     tokens = CommonTokenStream(lexer)
-    parser = DevOpsDSLParser(tokens)
+    tokens.fill()
 
-    # 🔥 Manejo de errores sintácticos
+    print("=" * 60)
+    print("TOKENS GENERADOS POR EL LEXER")
+    print("=" * 60)
+    for token in tokens.tokens:
+        nombre = lexer.ruleNames[token.type - 1] if 0 < token.type <= len(lexer.ruleNames) else ("EOF" if token.type == -1 else "SYMBOL")
+        print(f"  [{nombre}] -> \'{token.text}\'")
+    print()
+
+    parser = DevOpsDSLParser(tokens)
     parser.removeErrorListeners()
     parser.addErrorListener(ConsoleErrorListener())
-
     tree = parser.program()
 
-    print("[INFO] Árbol sintáctico generado\n")
+    print("=" * 60)
+    print("ARBOL SINTACTICO")
+    print("=" * 60)
+    print(tree.toStringTree(recog=parser))
+    print()
 
-    # Inicializar sistema
+    print("[INFO] Arbol sintactico generado\n")
+
     executor = Executor()
     interpreter = Interpreter(executor)
 
-    # Ejecutar
+    print("=" * 60)
+    print("INTERPRETACION Y EJECUCION")
+    print("=" * 60)
+    print()
+
     interpreter.visit(tree)
 
 
